@@ -468,12 +468,35 @@
             }
         }
 
-        // 簡單AI - 隨機下棋但偏好中央
+        // 簡單AI - 基本攻防 + 隨機
         function getRandomMove(moves) {
+            // 1. 檢查能否一步獲勝
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                board[move.row][move.col] = 2;
+                if (checkWin(move.row, move.col)) {
+                    board[move.row][move.col] = 0;
+                    return move;
+                }
+                board[move.row][move.col] = 0;
+            }
+            
+            // 2. 檢查是否需要阻擋玩家獲勝
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                board[move.row][move.col] = 1;
+                if (checkWin(move.row, move.col)) {
+                    board[move.row][move.col] = 0;
+                    return move;
+                }
+                board[move.row][move.col] = 0;
+            }
+            
+            // 3. 偏好中央區域
             var centerMoves = [];
             for (var i = 0; i < moves.length; i++) {
                 var move = moves[i];
-                if (Math.abs(move.row - 7) <= 3 && Math.abs(move.col - 7) <= 3) {
+                if (Math.abs(move.row - 7) <= 4 && Math.abs(move.col - 7) <= 4) {
                     centerMoves.push(move);
                 }
             }
@@ -482,7 +505,7 @@
             return candidates[Math.floor(Math.random() * candidates.length)];
         }
 
-        // 中等AI - 有基本防守和攻擊
+        // 中等AI - 強化攻防策略
         function getMediumMove(moves) {
             // 1. 檢查能否獲勝
             for (var i = 0; i < moves.length; i++) {
@@ -495,7 +518,7 @@
                 board[move.row][move.col] = 0;
             }
             
-            // 2. 檢查需要防守
+            // 2. 檢查需要防守(阻止對手獲勝)
             for (var i = 0; i < moves.length; i++) {
                 var move = moves[i];
                 board[move.row][move.col] = 1;
@@ -506,7 +529,37 @@
                 board[move.row][move.col] = 0;
             }
             
-            // 3. 選擇評分最高的位置
+            // 3. 檢查能否形成活四或雙三
+            var attackMoves = [];
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                var attackScore = evaluateAttackMove(move.row, move.col, 2);
+                if (attackScore >= 80) {
+                    attackMoves.push({move: move, score: attackScore});
+                }
+            }
+            
+            if (attackMoves.length > 0) {
+                attackMoves.sort(function(a, b) { return b.score - a.score; });
+                return attackMoves[0].move;
+            }
+            
+            // 4. 檢查需要阻止對手形成威脅
+            var defenseMoves = [];
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                var defenseScore = evaluateAttackMove(move.row, move.col, 1);
+                if (defenseScore >= 60) {
+                    defenseMoves.push({move: move, score: defenseScore});
+                }
+            }
+            
+            if (defenseMoves.length > 0) {
+                defenseMoves.sort(function(a, b) { return b.score - a.score; });
+                return defenseMoves[0].move;
+            }
+            
+            // 5. 選擇評分最高的位置
             var bestMove = null;
             var bestScore = -1;
             
@@ -522,25 +575,74 @@
             return bestMove || getRandomMove(moves);
         }
 
-        // 困難AI - 更深的思考
+        // 困難AI - 高級策略分析
         function getHardMove(moves) {
-            // 使用中等AI的邏輯，但增加更多策略
-            var move = getMediumMove(moves);
-            
-            // 額外檢查：避免給對手創造雙活三
-            var safeMoves = [];
+            // 1. 檢查能否獲勝
             for (var i = 0; i < moves.length; i++) {
-                var testMove = moves[i];
-                if (!createsDoubleThree(testMove.row, testMove.col, 1)) {
-                    safeMoves.push(testMove);
+                var move = moves[i];
+                board[move.row][move.col] = 2;
+                if (checkWin(move.row, move.col)) {
+                    board[move.row][move.col] = 0;
+                    return move;
+                }
+                board[move.row][move.col] = 0;
+            }
+            
+            // 2. 檢查需要防守（阻止玩家獲勝）
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                board[move.row][move.col] = 1;
+                if (checkWin(move.row, move.col)) {
+                    board[move.row][move.col] = 0;
+                    return move;
+                }
+                board[move.row][move.col] = 0;
+            }
+            
+            // 3. 檢查能否形成活四或雙三
+            var threatMoves = [];
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                var threatScore = calculateThreatScore(move.row, move.col, 2);
+                if (threatScore >= 500) {
+                    threatMoves.push({move: move, score: threatScore});
                 }
             }
             
-            if (safeMoves.length > 0 && safeMoves.indexOf(move) === -1) {
-                return getMediumMove(safeMoves);
+            if (threatMoves.length > 0) {
+                threatMoves.sort(function(a, b) { return b.score - a.score; });
+                return threatMoves[0].move;
             }
             
-            return move;
+            // 4. 檢查需要阻止玩家形成威脅
+            var defenseMoves = [];
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                var defenseScore = calculateThreatScore(move.row, move.col, 1);
+                if (defenseScore >= 300) {
+                    defenseMoves.push({move: move, score: defenseScore});
+                }
+            }
+            
+            if (defenseMoves.length > 0) {
+                defenseMoves.sort(function(a, b) { return b.score - a.score; });
+                return defenseMoves[0].move;
+            }
+            
+            // 5. 選擇最佳戰略位置
+            var bestMove = null;
+            var bestScore = -1;
+            
+            for (var i = 0; i < Math.min(moves.length, 12); i++) {
+                var move = moves[i];
+                var score = calculatePositionValue(move.row, move.col);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+            
+            return bestMove || getMediumMove(moves);
         }
 
         // 評估位置分數
@@ -567,6 +669,389 @@
                     }
                 }
             }
+            
+            return score;
+        }
+
+        // 評估攻擊移動分數
+        function evaluateAttackMove(row, col, player) {
+            var score = 0;
+            var directions = [[0,1], [1,0], [1,1], [1,-1]];
+            
+            for (var d = 0; d < directions.length; d++) {
+                var count = countConsecutive(row, col, directions[d][0], directions[d][1], player);
+                
+                // 根據連子數給分
+                if (count >= 5) score += 10000; // 五連獲勝
+                else if (count >= 4) score += 1000; // 四連
+                else if (count >= 3) score += 100; // 三連
+                else if (count >= 2) score += 20; // 二連
+                else score += 2;
+                
+                // 檢查是否有空位形成活棋
+                if (count >= 2 && isLiveLine(row, col, directions[d][0], directions[d][1], player, count)) {
+                    score += count * 50;
+                }
+            }
+            
+            return score;
+        }
+
+        // 計算連續棋子數（模擬在該位置放置棋子後的連子數）
+        function countConsecutive(row, col, dx, dy, player) {
+            // 暫時放置棋子
+            board[row][col] = player;
+            var count = 1;
+            
+            // 正方向
+            for (var i = 1; i < 5; i++) {
+                var newRow = row + dx * i;
+                var newCol = col + dy * i;
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                if (board[newRow][newCol] !== player) break;
+                count++;
+            }
+            
+            // 負方向
+            for (var i = 1; i < 5; i++) {
+                var newRow = row - dx * i;
+                var newCol = col - dy * i;
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                if (board[newRow][newCol] !== player) break;
+                count++;
+            }
+            
+            // 恢復棋盤狀態
+            board[row][col] = 0;
+            return count;
+        }
+
+        // 檢查是否為活棋（兩端都有空位）
+        function isLiveLine(row, col, dx, dy, player, count) {
+            if (count < 2) return false;
+            
+            // 暫時放置棋子來檢查
+            board[row][col] = player;
+            
+            var frontEmpty = false, backEmpty = false;
+            var frontCount = 0, backCount = 0;
+            
+            // 計算正方向連子數
+            for (var i = 1; i < 5; i++) {
+                var newRow = row + dx * i;
+                var newCol = col + dy * i;
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                if (board[newRow][newCol] !== player) {
+                    frontEmpty = (board[newRow][newCol] === 0);
+                    break;
+                }
+                frontCount++;
+            }
+            
+            // 計算負方向連子數
+            for (var i = 1; i < 5; i++) {
+                var newRow = row - dx * i;
+                var newCol = col - dy * i;
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                if (board[newRow][newCol] !== player) {
+                    backEmpty = (board[newRow][newCol] === 0);
+                    break;
+                }
+                backCount++;
+            }
+            
+            // 恢復棋盤狀態
+            board[row][col] = 0;
+            
+            return frontEmpty && backEmpty && (frontCount + backCount + 1) >= count;
+        }
+
+        // Minimax算法（Alpha-Beta剪枝）
+        function minimax(row, col, player, depth, isMaximizing, alpha, beta) {
+            // 模擬下棋
+            board[row][col] = player;
+            
+            // 檢查遊戲結束
+            if (checkWin(row, col)) {
+                board[row][col] = 0;
+                return isMaximizing ? 10000 - depth : -10000 + depth;
+            }
+            
+            if (depth === 0) {
+                var score = evaluateBoard();
+                board[row][col] = 0;
+                return score;
+            }
+            
+            var moves = getAvailableMoves();
+            if (moves.length === 0) {
+                board[row][col] = 0;
+                return 0; // 平局
+            }
+            
+            var bestScore = isMaximizing ? -Infinity : Infinity;
+            
+            for (var i = 0; i < Math.min(moves.length, 8); i++) {
+                var move = moves[i];
+                var nextPlayer = player === 1 ? 2 : 1;
+                var score = minimax(move.row, move.col, nextPlayer, depth - 1, !isMaximizing, alpha, beta);
+                
+                if (isMaximizing) {
+                    bestScore = Math.max(bestScore, score);
+                    alpha = Math.max(alpha, score);
+                } else {
+                    bestScore = Math.min(bestScore, score);
+                    beta = Math.min(beta, score);
+                }
+                
+                if (beta <= alpha) break; // Alpha-Beta剪枝
+            }
+            
+            board[row][col] = 0;
+            return bestScore;
+        }
+
+        // 獲取可用移動（優先考慮有價值的位置）
+        function getAvailableMoves() {
+            var moves = [];
+            var hasStones = false;
+            
+            // 先檢查棋盤上是否有棋子
+            for (var r = 0; r < 15; r++) {
+                for (var c = 0; c < 15; c++) {
+                    if (board[r][c] !== 0) {
+                        hasStones = true;
+                        break;
+                    }
+                }
+                if (hasStones) break;
+            }
+            
+            for (var row = 0; row < 15; row++) {
+                for (var col = 0; col < 15; col++) {
+                    if (board[row][col] === 0) {
+                        // 如果棋盤為空，返回中央位置
+                        if (!hasStones) {
+                            if (row === 7 && col === 7) {
+                                return [{row: row, col: col, score: 100}];
+                            }
+                            continue; // 跳過其他位置
+                        }
+                        // 只考慮附近有棋子的位置
+                        if (!hasStones || hasAdjacentStone(row, col)) {
+                            moves.push({row: row, col: col, score: evaluatePosition(row, col)});
+                        }
+                    }
+                }
+            }
+            
+            // 按分數排序
+            moves.sort(function(a, b) { return b.score - a.score; });
+            return moves;
+        }
+
+        // 檢查附近是否有棋子
+        function hasAdjacentStone(row, col) {
+            for (var dr = -2; dr <= 2; dr++) {
+                for (var dc = -2; dc <= 2; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    var newRow = row + dr;
+                    var newCol = col + dc;
+                    if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+                        if (board[newRow][newCol] !== 0) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // 評估整個棋盤
+        function evaluateBoard() {
+            var score = 0;
+            
+            for (var row = 0; row < 15; row++) {
+                for (var col = 0; col < 15; col++) {
+                    if (board[row][col] === 2) {
+                        score += evaluateAttackMove(row, col, 2);
+                    } else if (board[row][col] === 1) {
+                        score -= evaluateAttackMove(row, col, 1);
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        // 計算威脅分數（用於困難AI）
+        function calculateThreatScore(row, col, player) {
+            var score = 0;
+            var directions = [[0,1], [1,0], [1,1], [1,-1]];
+            
+            for (var d = 0; d < directions.length; d++) {
+                var dx = directions[d][0];
+                var dy = directions[d][1];
+                
+                // 計算該方向的連子情況
+                var lineInfo = analyzeDirection(row, col, dx, dy, player);
+                
+                if (lineInfo.count >= 4) {
+                    score += 2000; // 活四或沖四
+                } else if (lineInfo.count >= 3) {
+                    if (lineInfo.openEnds >= 2) {
+                        score += 800; // 活三
+                    } else if (lineInfo.openEnds >= 1) {
+                        score += 200; // 沖三
+                    }
+                } else if (lineInfo.count >= 2) {
+                    if (lineInfo.openEnds >= 2) {
+                        score += 100; // 活二
+                    } else if (lineInfo.openEnds >= 1) {
+                        score += 20; // 沖二
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        // 分析某個方向的棋子排列
+        function analyzeDirection(row, col, dx, dy, player) {
+            // 暫時放置棋子
+            board[row][col] = player;
+            
+            var count = 1;
+            var openEnds = 0;
+            
+            // 正方向計算
+            var frontCount = 0;
+            var frontBlocked = false;
+            for (var i = 1; i < 6; i++) {
+                var newRow = row + dx * i;
+                var newCol = col + dy * i;
+                
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) {
+                    frontBlocked = true;
+                    break;
+                }
+                
+                if (board[newRow][newCol] === player) {
+                    frontCount++;
+                } else if (board[newRow][newCol] === 0) {
+                    // 遇到空位，檢查是否有效開口
+                    if (frontCount > 0) openEnds++;
+                    break;
+                } else {
+                    frontBlocked = true;
+                    break;
+                }
+            }
+            
+            // 負方向計算
+            var backCount = 0;
+            var backBlocked = false;
+            for (var i = 1; i < 6; i++) {
+                var newRow = row - dx * i;
+                var newCol = col - dy * i;
+                
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) {
+                    backBlocked = true;
+                    break;
+                }
+                
+                if (board[newRow][newCol] === player) {
+                    backCount++;
+                } else if (board[newRow][newCol] === 0) {
+                    // 遇到空位，檢查是否有效開口
+                    if (backCount > 0) openEnds++;
+                    break;
+                } else {
+                    backBlocked = true;
+                    break;
+                }
+            }
+            
+            count += frontCount + backCount;
+            
+            // 檢查兩端開口
+            if (!frontBlocked && frontCount === 0) {
+                var frontRow = row + dx;
+                var frontCol = col + dy;
+                if (frontRow >= 0 && frontRow < 15 && frontCol >= 0 && frontCol < 15 && board[frontRow][frontCol] === 0) {
+                    openEnds++;
+                }
+            }
+            
+            if (!backBlocked && backCount === 0) {
+                var backRow = row - dx;
+                var backCol = col - dy;
+                if (backRow >= 0 && backRow < 15 && backCol >= 0 && backCol < 15 && board[backRow][backCol] === 0) {
+                    openEnds++;
+                }
+            }
+            
+            // 恢復棋盤狀態
+            board[row][col] = 0;
+            
+            return {count: count, openEnds: openEnds};
+        }
+
+        // 計算位置綜合價值（用於困難AI）
+        function calculatePositionValue(row, col) {
+            var score = 0;
+            
+            // 基礎位置分數
+            score += evaluatePosition(row, col);
+            
+            // 攻擊潛力
+            var attackScore = calculateThreatScore(row, col, 2);
+            score += attackScore * 1.5;
+            
+            // 防守價值
+            var defenseScore = calculateThreatScore(row, col, 1);
+            score += defenseScore * 1.0;
+            
+            // 戰略位置加分
+            var strategicValue = getStrategicValue(row, col);
+            score += strategicValue;
+            
+            return score;
+        }
+
+        // 獲取戰略位置價值
+        function getStrategicValue(row, col) {
+            var score = 0;
+            
+            // 中央區域加分
+            var centerDistance = Math.abs(row - 7) + Math.abs(col - 7);
+            score += Math.max(0, 10 - centerDistance);
+            
+            // 檢查是否能同時影響多個方向
+            var directions = [[0,1], [1,0], [1,1], [1,-1]];
+            var activeDirections = 0;
+            
+            for (var d = 0; d < directions.length; d++) {
+                var dx = directions[d][0];
+                var dy = directions[d][1];
+                var hasNearbyStone = false;
+                
+                // 檢查該方向2格內是否有棋子
+                for (var i = -2; i <= 2; i++) {
+                    if (i === 0) continue;
+                    var newRow = row + dx * i;
+                    var newCol = col + dy * i;
+                    
+                    if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+                        if (board[newRow][newCol] !== 0) {
+                            hasNearbyStone = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (hasNearbyStone) activeDirections++;
+            }
+            
+            score += activeDirections * 5;
             
             return score;
         }
