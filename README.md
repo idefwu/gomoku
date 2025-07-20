@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 五子棋網路對戰遊戲
 
 一個支援多人線上對戰的五子棋遊戲，使用 WebSocket 技術實現即時對戰。
@@ -173,3 +174,6 @@ MIT License
 ## 貢獻
 
 歡迎提交 Issue 和 Pull Request！
+=======
+# gomoku
+>>>>>>> 0605a50660b7e17a819ac7d2e997aa71af9ee237
