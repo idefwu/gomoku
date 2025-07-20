@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>基本測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>JavaScript 測試頁面</h1>
+        <p>請點擊下方按鈕測試功能：</p>
+        
+        <button onclick="test1()">測試 1: 基本 Alert</button>
+        <button onclick="test2()">測試 2: 修改文字</button>
+        <button onclick="test3()">測試 3: 創建元素</button>
+        
+        <div id="result" style="margin-top: 20px; padding: 10px; background: #e9ecef; border-radius: 5px;">
+            結果將顯示在這裡...
+        </div>
+    </div>
+
+    <script>
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('頁面已載入');
+            document.getElementById('result').innerHTML = '✅ JavaScript 已載入並運行';
+        });
+
+        // 測試函數 1
+        function test1() {
+            alert('🎉 測試 1 成功！JavaScript 正常工作！');
+            console.log('測試 1 執行');
+        }
+
+        // 測試函數 2
+        function test2() {
+            document.getElementById('result').innerHTML = '✅ 測試 2 成功！文字已修改！時間: ' + new Date().toLocaleTimeString();
+            console.log('測試 2 執行');
+        }
+
+        // 測試函數 3
+        function test3() {
+            var newElement = document.createElement('div');
+            newElement.innerHTML = '✅ 測試 3 成功！新元素已創建！';
+            newElement.style.background = '#d4edda';
+            newElement.style.padding = '10px';
+            newElement.style.marginTop = '10px';
+            newElement.style.borderRadius = '5px';
+            document.getElementById('result').appendChild(newElement);
+            console.log('測試 3 執行');
+        }
+
+        // 自動測試（3秒後執行）
+        setTimeout(function() {
+            console.log('自動測試開始');
+            document.getElementById('result').innerHTML += '<br>⏰ 自動測試：3秒後執行成功';
+        }, 3000);
+    </script>
+</body>
+</html>

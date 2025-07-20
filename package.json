@@ -1,0 +1,19 @@
+{
+  "name": "gomoku-game",
+  "version": "1.0.0",
+  "description": "五子棋網路對戰遊戲",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["gomoku", "websocket", "game", "multiplayer"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

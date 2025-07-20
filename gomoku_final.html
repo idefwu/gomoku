@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>五子棋 - AI對戰版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: inline-block;
+            margin: 20px auto;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .game-info {
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .mode-selection {
+            margin: 20px 0;
+        }
+        
+        .difficulty-selection {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .board {
+            display: inline-block;
+            background: #deb887;
+            border: 3px solid #8b4513;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .row {
+            display: flex;
+        }
+        
+        .cell {
+            width: 35px;
+            height: 35px;
+            border: 1px solid #8b4513;
+            background: #f4e4bc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .cell:hover {
+            background: #e6d3a3;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .thinking {
+            color: #ff6b6b;
+            font-style: italic;
+        }
+
+        /* 棋子樣式 */
+        .stone {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .stone.black {
+            background: radial-gradient(circle at 30% 30%, #555, #000);
+            border-color: #222;
+        }
+
+        .stone.white {
+            background: radial-gradient(circle at 30% 30%, #fff, #ddd);
+            border-color: #666;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 3px rgba(255,255,255,0.8);
+        }
+
+        /* 響應式設計 - 手機適配 */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                margin: 10px;
+            }
+            
+            .board {
+                padding: 15px;
+            }
+            
+            .cell {
+                width: 30px;
+                height: 30px;
+                font-size: 20px;
+            }
+            
+            .stone {
+                width: 24px;
+                height: 24px;
+            }
+            
+            button {
+                padding: 10px 18px;
+                font-size: 14px;
+                margin: 3px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .game-info {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .board {
+                padding: 10px;
+            }
+            
+            .cell {
+                width: 25px;
+                height: 25px;
+                font-size: 18px;
+            }
+            
+            .stone {
+                width: 20px;
+                height: 20px;
+            }
+            
+            button {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 五子棋遊戲</h1>
+        
+        <!-- 模式選擇 -->
+        <div class="mode-selection" id="modeSelection">
+            <div class="game-info">請選擇遊戲模式：</div>
+            <button class="btn-success" onclick="selectAIMode()">🤖 vs 電腦</button>
+            <button class="btn-primary" onclick="selectLocalMode()">👥 本地對戰</button>
+            <button class="btn-secondary" onclick="testFunction()">🧪 測試按鈕</button>
+        </div>
+        
+        <!-- 難度選擇 -->
+        <div class="difficulty-selection" id="difficultySelection">
+            <div class="game-info">選擇AI難度：</div>
+            <button class="btn-success" onclick="startAIGame('easy')">😊 簡單</button>
+            <button class="btn-warning" onclick="startAIGame('medium')">🤔 中等</button>
+            <button class="btn-secondary" onclick="startAIGame('hard')">😤 困難</button>
+            <br><br>
+            <button class="btn-primary" onclick="backToModeSelection()">↩️ 返回</button>
+        </div>
+        
+        <!-- 遊戲狀態 -->
+        <div class="game-info" id="gameInfo">歡迎來到五子棋遊戲！</div>
+        
+        <!-- 棋盤 -->
+        <div class="board hidden" id="gameBoard"></div>
+        
+        <!-- 遊戲控制 -->
+        <div class="controls hidden" id="gameControls">
+            <button class="btn-secondary" onclick="backToModeSelection()">🏠 重新開始</button>
+            <button class="btn-primary" onclick="restartCurrentGame()">🔄 重新一局</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局變量
+        var board = [];
+        var currentPlayer = 1; // 1=黑棋(●), 2=白棋(○)
+        var gameStarted = false;
+        var gameMode = null; // 'ai' 或 'local'
+        var aiDifficulty = 'medium';
+        var isAIThinking = false;
+
+        // 測試函數
+        function testFunction() {
+            alert('🎉 恭喜！所有功能正常！\n\n你可以選擇：\n• vs 電腦：與AI對戰\n• 本地對戰：雙人遊戲');
+            console.log('測試成功');
+        }
+
+        // 選擇AI模式
+        function selectAIMode() {
+            console.log('選擇AI模式');
+            document.getElementById('modeSelection').style.display = 'none';
+            document.getElementById('difficultySelection').style.display = 'block';
+        }
+
+        // 選擇本地模式
+        function selectLocalMode() {
+            console.log('選擇本地模式');
+            gameMode = 'local';
+            startGame();
+        }
+
+        // 開始AI遊戲
+        function startAIGame(difficulty) {
+            console.log('開始AI遊戲，難度：' + difficulty);
+            gameMode = 'ai';
+            aiDifficulty = difficulty;
+            startGame();
+        }
+
+        // 返回模式選擇
+        function backToModeSelection() {
+            console.log('返回模式選擇');
+            document.getElementById('modeSelection').style.display = 'block';
+            document.getElementById('difficultySelection').style.display = 'none';
+            document.getElementById('gameBoard').classList.add('hidden');
+            document.getElementById('gameControls').classList.add('hidden');
+            gameStarted = false;
+            gameMode = null;
+            document.getElementById('gameInfo').innerHTML = '歡迎來到五子棋遊戲！';
+        }
+
+        // 開始遊戲
+        function startGame() {
+            console.log('開始遊戲，模式：' + gameMode);
+            gameStarted = true;
+            currentPlayer = 1;
+            isAIThinking = false;
+            
+            // 隱藏選擇界面
+            document.getElementById('modeSelection').style.display = 'none';
+            document.getElementById('difficultySelection').style.display = 'none';
+            
+            // 顯示遊戲界面
+            document.getElementById('gameBoard').classList.remove('hidden');
+            document.getElementById('gameControls').classList.remove('hidden');
+            
+            // 初始化棋盤
+            board = [];
+            for (var i = 0; i < 15; i++) {
+                board[i] = [];
+                for (var j = 0; j < 15; j++) {
+                    board[i][j] = 0;
+                }
+            }
+            
+            createBoard();
+            updateGameInfo();
+        }
+
+        // 重新開始當前遊戲
+        function restartCurrentGame() {
+            console.log('重新開始當前遊戲');
+            startGame();
+        }
+
+        // 創建棋盤
+        function createBoard() {
+            var gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            
+            for (var row = 0; row < 15; row++) {
+                var rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                for (var col = 0; col < 15; col++) {
+                    var cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = function() {
+                        var r = parseInt(this.dataset.row);
+                        var c = parseInt(this.dataset.col);
+                        clickCell(r, c);
+                    };
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    rowDiv.appendChild(cell);
+                }
+                
+                gameBoard.appendChild(rowDiv);
+            }
+        }
+
+        // 點擊格子
+        function clickCell(row, col) {
+            console.log('點擊格子: ' + row + ',' + col);
+            
+            if (!gameStarted || isAIThinking) {
+                return;
+            }
+            
+            if (board[row][col] !== 0) {
+                return;
+            }
+            
+            // AI模式下只能玩家(黑棋)下棋
+            if (gameMode === 'ai' && currentPlayer !== 1) {
+                return;
+            }
+            
+            // 下棋
+            placeStone(row, col, currentPlayer);
+            
+            // 檢查勝利
+            if (checkWin(row, col)) {
+                var winner = currentPlayer === 1 ? '黑棋' : '白棋';
+                alert('🎉 ' + winner + ' 獲勝！');
+                document.getElementById('gameInfo').innerHTML = '🏆 ' + winner + ' 獲勝！';
+                gameStarted = false;
+                return;
+            }
+            
+            // 切換玩家
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateGameInfo();
+            
+            // AI回合
+            if (gameMode === 'ai' && currentPlayer === 2 && gameStarted) {
+                setTimeout(aiMove, 800);
+            }
+        }
+
+        // 放置棋子
+        function placeStone(row, col, player) {
+            board[row][col] = player;
+            var cell = document.querySelector('[data-row="' + row + '"][data-col="' + col + '"]');
+            
+            // 創建實體棋子
+            var stone = document.createElement('div');
+            stone.className = 'stone ' + (player === 1 ? 'black' : 'white');
+            cell.innerHTML = '';
+            cell.appendChild(stone);
+            cell.style.cursor = 'not-allowed';
+        }
+
+        // AI下棋
+        function aiMove() {
+            if (!gameStarted || currentPlayer !== 2) return;
+            
+            isAIThinking = true;
+            document.getElementById('gameInfo').innerHTML = '<span class="thinking">🤖 AI思考中...</span>';
+            
+            setTimeout(function() {
+                var move = getBestAIMove();
+                if (move) {
+                    placeStone(move.row, move.col, 2);
+                    
+                    // 檢查AI是否獲勝
+                    if (checkWin(move.row, move.col)) {
+                        alert('🤖 AI獲勝！再來一局吧！');
+                        document.getElementById('gameInfo').innerHTML = '🤖 AI獲勝！';
+                        gameStarted = false;
+                        isAIThinking = false;
+                        return;
+                    }
+                    
+                    // 切換回玩家
+                    currentPlayer = 1;
+                    isAIThinking = false;
+                    updateGameInfo();
+                }
+            }, aiDifficulty === 'hard' ? 1200 : aiDifficulty === 'medium' ? 800 : 400);
+        }
+
+        // 獲取AI最佳移動
+        function getBestAIMove() {
+            var availableMoves = [];
+            for (var row = 0; row < 15; row++) {
+                for (var col = 0; col < 15; col++) {
+                    if (board[row][col] === 0) {
+                        availableMoves.push({row: row, col: col});
+                    }
+                }
+            }
+            
+            if (availableMoves.length === 0) return null;
+            
+            // 根據難度選擇策略
+            if (aiDifficulty === 'easy') {
+                return getRandomMove(availableMoves);
+            } else if (aiDifficulty === 'medium') {
+                return getMediumMove(availableMoves);
+            } else {
+                return getHardMove(availableMoves);
+            }
+        }
+
+        // 簡單AI - 隨機下棋但偏好中央
+        function getRandomMove(moves) {
+            var centerMoves = [];
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                if (Math.abs(move.row - 7) <= 3 && Math.abs(move.col - 7) <= 3) {
+                    centerMoves.push(move);
+                }
+            }
+            
+            var candidates = centerMoves.length > 0 ? centerMoves : moves;
+            return candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        // 中等AI - 有基本防守和攻擊
+        function getMediumMove(moves) {
+            // 1. 檢查能否獲勝
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                board[move.row][move.col] = 2;
+                if (checkWin(move.row, move.col)) {
+                    board[move.row][move.col] = 0;
+                    return move;
+                }
+                board[move.row][move.col] = 0;
+            }
+            
+            // 2. 檢查需要防守
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                board[move.row][move.col] = 1;
+                if (checkWin(move.row, move.col)) {
+                    board[move.row][move.col] = 0;
+                    return move;
+                }
+                board[move.row][move.col] = 0;
+            }
+            
+            // 3. 選擇評分最高的位置
+            var bestMove = null;
+            var bestScore = -1;
+            
+            for (var i = 0; i < moves.length; i++) {
+                var move = moves[i];
+                var score = evaluatePosition(move.row, move.col);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+            
+            return bestMove || getRandomMove(moves);
+        }
+
+        // 困難AI - 更深的思考
+        function getHardMove(moves) {
+            // 使用中等AI的邏輯，但增加更多策略
+            var move = getMediumMove(moves);
+            
+            // 額外檢查：避免給對手創造雙活三
+            var safeMoves = [];
+            for (var i = 0; i < moves.length; i++) {
+                var testMove = moves[i];
+                if (!createsDoubleThree(testMove.row, testMove.col, 1)) {
+                    safeMoves.push(testMove);
+                }
+            }
+            
+            if (safeMoves.length > 0 && safeMoves.indexOf(move) === -1) {
+                return getMediumMove(safeMoves);
+            }
+            
+            return move;
+        }
+
+        // 評估位置分數
+        function evaluatePosition(row, col) {
+            var score = 0;
+            
+            // 中央位置加分
+            var centerDistance = Math.abs(row - 7) + Math.abs(col - 7);
+            score += Math.max(0, 14 - centerDistance);
+            
+            // 檢查周圍是否有己方棋子
+            var directions = [[0,1], [1,0], [1,1], [1,-1], [0,-1], [-1,0], [-1,-1], [-1,1]];
+            for (var d = 0; d < directions.length; d++) {
+                var dx = directions[d][0];
+                var dy = directions[d][1];
+                var newRow = row + dx;
+                var newCol = col + dy;
+                
+                if (newRow >= 0 && newRow < 15 && newCol >= 0 && newCol < 15) {
+                    if (board[newRow][newCol] === 2) {
+                        score += 10; // 己方棋子附近
+                    } else if (board[newRow][newCol] === 1) {
+                        score += 5; // 對手棋子附近(防守)
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        // 檢查是否會創造雙活三
+        function createsDoubleThree(row, col, player) {
+            board[row][col] = player;
+            var threeCount = 0;
+            var directions = [[0,1], [1,0], [1,1], [1,-1]];
+            
+            for (var d = 0; d < directions.length; d++) {
+                if (countInDirection(row, col, directions[d][0], directions[d][1], player) === 3) {
+                    threeCount++;
+                }
+            }
+            
+            board[row][col] = 0;
+            return threeCount >= 2;
+        }
+
+        // 計算某方向連子數
+        function countInDirection(row, col, dx, dy, player) {
+            var count = 1;
+            
+            // 正方向
+            for (var i = 1; i < 5; i++) {
+                var newRow = row + dx * i;
+                var newCol = col + dy * i;
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                if (board[newRow][newCol] !== player) break;
+                count++;
+            }
+            
+            // 負方向
+            for (var i = 1; i < 5; i++) {
+                var newRow = row - dx * i;
+                var newCol = col - dy * i;
+                if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                if (board[newRow][newCol] !== player) break;
+                count++;
+            }
+            
+            return count;
+        }
+
+        // 檢查勝利
+        function checkWin(row, col) {
+            var player = board[row][col];
+            var directions = [[0,1], [1,0], [1,1], [1,-1]];
+            
+            for (var d = 0; d < directions.length; d++) {
+                var dx = directions[d][0];
+                var dy = directions[d][1];
+                var count = 1;
+                
+                // 正方向檢查
+                for (var i = 1; i < 5; i++) {
+                    var newRow = row + dx * i;
+                    var newCol = col + dy * i;
+                    if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                    if (board[newRow][newCol] !== player) break;
+                    count++;
+                }
+                
+                // 負方向檢查
+                for (var i = 1; i < 5; i++) {
+                    var newRow = row - dx * i;
+                    var newCol = col - dy * i;
+                    if (newRow < 0 || newRow >= 15 || newCol < 0 || newCol >= 15) break;
+                    if (board[newRow][newCol] !== player) break;
+                    count++;
+                }
+                
+                if (count >= 5) return true;
+            }
+            
+            return false;
+        }
+
+        // 更新遊戲信息
+        function updateGameInfo() {
+            if (gameMode === 'ai') {
+                if (currentPlayer === 1) {
+                    document.getElementById('gameInfo').innerHTML = '你的回合 (黑棋 ●)';
+                } else {
+                    document.getElementById('gameInfo').innerHTML = 'AI回合 (白棋 ○)';
+                }
+            } else {
+                var playerName = currentPlayer === 1 ? '黑棋 ●' : '白棋 ○';
+                document.getElementById('gameInfo').innerHTML = '輪到 ' + playerName + ' 下棋';
+            }
+        }
+
+        // 頁面載入完成
+        window.onload = function() {
+            console.log('五子棋遊戲載入完成');
+        };
+    </script>
+</body>
+</html>
